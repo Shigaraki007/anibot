@@ -583,24 +583,23 @@ async def get_featured_in_lists(idm, req, auth: bool = False, user: int = None):
     vars_ = {"id": int(idm)}
     result = await return_json_senpai(LS_INFO_QUERY, vars_, auth=auth, user=user)
     data = result["data"]["Character"]["media"]["nodes"]
+    out_ = ""
     if req == "ANI":
         out = "ANIMES:\n\n"
-        out_ = ""
         for ani in data:
             k = ani["title"]["english"] or ani["title"]["romaji"]
             kk = ani["type"]
             if kk == "ANIME":
                 out_ += f"• __{k}__\n"
-        return (out+out_ if len(out_) != 0 else False), result["data"]["Character"]["image"]["large"]
     else:
         out = "MANGAS:\n\n"
-        out_ = ""
         for ani in data:
             k = ani["title"]["english"] or ani["title"]["romaji"]
             kk = ani["type"]
             if kk == "MANGA":
                 out_ += f"• __{k}__\n"
-        return (out+out_ if len(out_) != 0 else False), result["data"]["Character"]["image"]["large"]
+
+    return (out+out_ if len(out_) != 0 else False), result["data"]["Character"]["image"]["large"]
 
 
 async def get_additional_info(idm, req, ctgry, auth: bool = False, user: int = None):
@@ -627,17 +626,20 @@ async def get_additional_info(idm, req, ctgry, auth: bool = False, user: int = N
         synopsis = data.get("description")
         return (pic if ctgry == "ANI" else data["image"]["large"]), synopsis
     elif req == "char":
-        charlist = []
-        for char in data["characters"]["nodes"]:
-            charlist.append(f"• {char['name']['full']}")
+        charlist = [
+            f"• {char['name']['full']}" for char in data["characters"]["nodes"]
+        ]
+
         chrctrs = ("\n").join(charlist)
         charls = f"`{chrctrs}`" if len(charlist) != 0 else ""
         return pic, charls
     else:
         prqlsql = data.get("relations").get("edges")
-        ps = ""
-        for i in prqlsql:
-            ps += f'• {i["node"]["title"]["romaji"]} `{i["relationType"]}`\n'
+        ps = "".join(
+            f'• {i["node"]["title"]["romaji"]} `{i["relationType"]}`\n'
+            for i in prqlsql
+        )
+
         return pic, ps
 
 
@@ -674,7 +676,7 @@ async def get_anime(vars_, auth: bool = False, user: int = None):
     user_data = ""
     in_ls = False
     in_ls_id = ""
-    if auth==True:
+    if auth:
         in_list = data.get("mediaListEntry")
         if in_list!=None:
             in_ls = True
@@ -724,13 +726,10 @@ async def get_anime(vars_, auth: bool = False, user: int = None):
         ep_ = list(str(eps))
         x = ep_.pop()
         th = "th"
-        if len(ep_) >= 1:
-            if ep_.pop() != "1":
-                th = pos_no(x)
-        else:
+        if len(ep_) >= 1 and ep_.pop() != "1" or len(ep_) < 1:
             th = pos_no(x)
         air_on += f" | {eps}{th} eps"
-    if air_on == None:
+    if air_on is None:
         eps_ = f"` | `{episodes} eps" if episodes != None else ""
         status_air = f"➤ **STATUS:** `{status}{eps_}`"
     else:
@@ -775,7 +774,7 @@ async def get_anilist(qdb, page, auth: bool = False, user: int = None):
     in_ls = False
     in_ls_id = ""
     user_data = ""
-    if auth==True:
+    if auth:
         in_list = data.get("mediaListEntry")
         if in_list!=None:
             in_ls = True
@@ -821,13 +820,10 @@ async def get_anilist(qdb, page, auth: bool = False, user: int = None):
         ep_ = list(str(eps))
         x = ep_.pop()
         th = "th"
-        if len(ep_) >= 1:
-            if ep_.pop() != "1":
-                th = pos_no(x)
-        else:
+        if len(ep_) >= 1 and ep_.pop() != "1" or len(ep_) < 1:
             th = pos_no(x)
         air_on += f" | {eps}{th} eps"
-    if air_on == None:
+    if air_on is None:
         eps_ = f"` | `{episodes} eps" if episodes != None else ""
         status_air = f"➤ **STATUS:** `{status}{eps_}`"
     else:
@@ -898,7 +894,7 @@ async def get_manga(qdb, page, auth: bool = False, user: int = None):
     in_ls = False
     in_ls_id = ""
     user_data = ""
-    if auth==True:
+    if auth:
         in_list = data.get("mediaListEntry")
         if in_list!=None:
             in_ls = True
@@ -909,7 +905,7 @@ async def get_manga(qdb, page, auth: bool = False, user: int = None):
     name = f"""[{c_flag}]**{romaji}**
         __{english}__
         {native}"""
-    if english == None:
+    if english is None:
         name = f"""[{c_flag}]**{romaji}**
         {native}"""
     finals_ = f"{name}\n\n"
@@ -945,7 +941,7 @@ async def get_airing(vars_, auth: bool = False, user: int = None):
     in_ls = False
     in_ls_id = ""
     user_data = ""
-    if auth==True:
+    if auth:
         in_list = data.get("mediaListEntry")
         if in_list!=None:
             in_ls = True
@@ -985,7 +981,10 @@ async def toggle_favourites(id_: int, media: str, user: int):
 
 async def get_user(vars_, req, user):
     query = USER_QRY if "user" in req else VIEWER_QRY
-    k = await return_json_senpai(query=query, vars=vars_, auth=False if "user" in req else True, user=int(user))
+    k = await return_json_senpai(
+        query=query, vars=vars_, auth="user" not in req, user=int(user)
+    )
+
     error = k.get("errors")
     if error:
         error_sts = error[0].get("message")
@@ -1008,9 +1007,9 @@ Total Manga Read: `{manga['count']}`
 Total Chapters Read: `{manga['chaptersRead']}`
 Total Volumes Read: `{manga['volumesRead']}`
 Average Score: `{manga['meanScore']}`
-""" 
+"""
     btn = []
-    if not "user" in req:
+    if "user" not in req:
         btn.append([
             InlineKeyboardButton("Favourites", callback_data=f"myfavs_{data['id']}_{user}"),
             InlineKeyboardButton("Activity", callback_data=f"myacc_{data['id']}_{user}")

@@ -15,7 +15,7 @@ LOG_CHANNEL_ID = int(os.environ.get("LOG_CHANNEL_ID"))
 OWNER = list(filter(lambda x: x, map(int, os.environ.get("OWNER_ID").split())))  ## sudos can be included
 
 DOWN_PATH = "anibot/downloads/"
-HELP_DICT = dict()
+HELP_DICT = {}
 
 plugins = dict(root="anibot/plugins")
 anibot = Client("anibot", bot_token=BOT_TOKEN, api_id=API_ID, api_hash=API_HASH, plugins=plugins)

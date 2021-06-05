@@ -155,14 +155,16 @@ async def flex_cmd(client: Client, message: Message):
     query = message.text.split(" ", 1)
     get_user = None
     if "user" in query[0]:
-        if not len(query)==2:
+        if len(query) != 2:
             k = await message.reply_text("NameError: 'query' not defined")
             await asyncio.sleep(5)
             return await k.delete()
         else:
             get_user = {"search": query[1]}
     user = message.from_user.id
-    if not "user" in query[0] and not (await AUTH_USERS.find_one({"id": user})):
+    if "user" not in query[0] and not (
+        await AUTH_USERS.find_one({"id": user})
+    ):
         bot_us = (await client.get_me()).username
         return await message.reply_text(
             "Please connect your account first to use this cmd",
@@ -624,9 +626,9 @@ async def featured_in_btn(client, cq: CallbackQuery):
     if result[0]==False:
         result = await get_featured_in_lists(int(idm), "MAN")
         req = None
-        if result[0]==False:
-            await cq.answer("No Data Available!!!")
-            return
+    if result[0]==False:
+        await cq.answer("No Data Available!!!")
+        return
     msg, pic = result
     button = []
     if req!=None:
@@ -646,8 +648,15 @@ async def featured_in_switch_btn(client, cq: CallbackQuery):
         await cq.answer("No Data Available!!!")
         return
     msg, pic = result
-    button = []
-    button.append([InlineKeyboardButton(text=f"{bt}", callback_data=f"{reqb}_{idm}_{qry}_{pg}_{auth}_{user}")])
+    button = [
+        [
+            InlineKeyboardButton(
+                text=f"{bt}",
+                callback_data=f"{reqb}_{idm}_{qry}_{pg}_{auth}_{user}",
+            )
+        ]
+    ]
+
     button.append([InlineKeyboardButton(text="Back", callback_data=f"page_CHARACTER_{qry}_{pg}_{auth}_{user}")])
     await cq.edit_message_media(InputMediaPhoto(pic, caption=msg), reply_markup=InlineKeyboardMarkup(button))
 

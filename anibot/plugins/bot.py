@@ -18,7 +18,9 @@ async def start_(client: Client, message: Message):
     bot = await client.get_me()
     if message.chat.id==message.from_user.id:
         user = message.from_user
-        if not (user.id in OWNER) and not (await USERS.find_one({"id": user.id})):
+        if user.id not in OWNER and not (
+            await USERS.find_one({"id": user.id})
+        ):
             await asyncio.gather(USERS.insert_one({"id": user.id, "user": user.first_name}))
             await clog("ANIBOT", f"New User started bot\n\n[{user.first_name}](tg://user?id={user.id})\nID: `{user.id}`", "NEW_USER")
         if len(message.text.split(" "))!=1:
